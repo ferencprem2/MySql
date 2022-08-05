@@ -104,3 +104,97 @@ HAVING CNT>10
 SELECT SQL_NO_CACHE * FROM TEST2 WHERE `Id` > 5
 
 SHOW CREATE TABLE PRODUCTS #shows how to crate table
+
+SELECT TESTA.*, TESTC.* 
+FROM TESTA LEFT JOIN TESTC ON (TESTA.A1=TESTC.A1)
+WHERE TESTC.A1 IS NOT NULL
+
+SELECT #DISTINCT
+#products.Pcode, products.`Name`, taric.DutyRate, 
+products.Taric, COUNT(*)
+FROM products LEFT JOIN taric ON (products.Taric=Taric.Taric)
+WHERE products.Kind = "PRODUCT" AND Taric.Taric IS NULL
+GROUP BY products.Taric
+
+SELECT  products.`Name`, warehouse_shelf_stock.ProductId, warehouse_shelf_stock.Shelf, warehouse_shelf_stock.Quantity
+FROM products RIGHT JOIN warehouse_shelf_stock ON (products.Pcode=warehouse_shelf_stock.ProductId)
+WHERE warehouse_shelf_stock.ProductId AND warehouse_shelf_stock.Shelf AND warehouse_shelf_stock.Quantity IS NOT NULL
+
+
+SELECT
+	products.`Name`,
+	warehouse_shelf_stock.ProductId,
+	warehouse_shelf_stock.Shelf,
+	warehouse_shelf_stock.Quantity,
+	qqcCount.CNT
+FROM
+	warehouse_shelf_stock
+LEFT JOIN products ON (
+	products.ProductId = warehouse_shelf_stock.ProductId
+)
+LEFT JOIN warehouse_shelves ON (
+	warehouse_shelf_stock.Shelf = warehouse_shelves.Shelf
+)
+LEFT JOIN product_storage ON (
+	warehouse_shelf_stock.ProductId = product_storage.ProductId
+)
+LEFT JOIN product_storage_types ON (
+	product_storage.StorageId = product_storage_types.StorageId
+)
+LEFT JOIN (
+	SELECT
+		qqc_labels.QqcId,
+		qqc_labels.ProductId,
+		qqc_labels.Shelf,
+		COUNT(*) AS 'CNT'
+	FROM
+		qqc_labels
+	WHERE
+		qqc_labels.`Status` = "ON_SHELF"
+	GROUP BY
+		qqc_labels.Shelf,
+		qqc_labels.ProductId
+) qqcCount ON (
+	qqcCount.ProductId = warehouse_shelf_stock.ProductId
+	AND qqcCount.Shelf = warehouse_shelf_stock.Shelf
+)
+WHERE
+	warehouse_shelves.Picking = 0
+AND product_storage_types.`Name` = "Master karton"
+AND product_storage.Active = 1
+AND warehouse_shelf_stock.Quantity > 0 #Pcode, Name, 
+#mlyik polcban melyik termékből mennyi van
+#melyek azok a termékek amelyek master kartonbavannak csomagolva 
+#amelyek master kartonban vannak tárolva, hány különböző dobozban vannak tárolva
+
+SELECT Pcode FROM products WHERE ProductId IN (
+	SELECT ProductId FROM qqc_labels WHERE date>"2022-01-01"
+)
+
+
+SELECT SQL_NO_CACHE
+    Shelf,
+    ProductId,
+    (
+        SELECT
+            `StorageId`
+        FROM
+            product_storage
+        WHERE
+            product_storage.ProductId = warehouse_shelf_stock.ProductId
+        AND Active = TRUE
+        ORDER BY
+            StorageId DESC
+        LIMIT 1
+    )
+FROM
+    warehouse_shelf_stock
+	
+	
+SELECT Brand, GROUP_CONCAT(DISTINCT,Taric ORDER BY Taric SEPARATOR "|") FROM products Where Taric<>"" AND Brand<>""
+GROUP BY Brand
+ORDER BY Brand
+
+BEGIN
+COMMIT
+ROLLBACK
